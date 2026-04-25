@@ -111,6 +111,11 @@ class FactoryModel(mesa.Model):
         self.schedule = mesa.time.RandomActivation(self)
         self.mode = mode
 
+        # 延迟启动与拥挤程度控制变量
+        self.current_step = 0
+        self.activation_delay = 5 # 系统启动延迟：前5个回合盲目逃生
+        self.max_capacity = 3     # 通道拥挤度：一个格子最多
+
         # 设置两个安全出口（左上角和右下角）
         exits = [(0, 0), (width-1, height-1)]
         for pos in exits:
