@@ -43,18 +43,12 @@ def agent_portrayal(agent):
 # ==========================================
 canvas_element = mesa.visualization.CanvasGrid(agent_portrayal, 20, 20, 500, 500)
 
-# (可选) 增加一个实时折线图，直接在网页侧边看数据
-chart_element = mesa.visualization.ChartModule([
-    {"Label": "Dead (Poisoned)", "Color": "Red"},
-    {"Label": "Safe (Evacuated)", "Color": "Green"}
-])
-
 # ==========================================
 # 配置服务器：绑定模型、可视化元素和初始参数
 # ==========================================
 server = mesa.visualization.ModularServer(
     FactoryModel,
-    [canvas_element, chart_element], # 包含画布和图表
+    [canvas_element], # 包含画布和图表
     "Factory Crisis ABM Simulation",
     {
         "width": 20,
