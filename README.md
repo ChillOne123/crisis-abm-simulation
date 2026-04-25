@@ -1,12 +1,42 @@
-# Crisis Management ABM Simulation: Traditional vs. Smart Evacuation
+# 🏭 Factory-Evacuation-ABM: 危机情境下的数智化疏散仿真
 
-本项目基于 Python `Mesa` 框架构建了一个多智能体模型（Agent-Based Model），用于模拟和对比在化工厂毒气泄漏危机场景下，传统贪心寻路算法与基于 IoT+AI 动态规划（BFS避障算法）在人员疏散效能上的差异。
+本项目基于 **Mesa** 框架构建了一个多智能体模型 (ABM)，模拟工厂发生毒气泄漏时的工人疏散过程。通过对比“传统静态疏散”与“数智化动态调度”，本项目探讨了技术在应急管理中的赋能价值及其局限性。
 
-## 核心功能
-* **传统模式 (Traditional Mode)**：模拟信息盲区下，工人依靠贪心算法直线奔向最近出口，容易误入毒气扩散区。
-* **数智化模式 (Smart Mode)**：模拟全局信息统筹下，系统为工人实时下发避让毒气的动态安全路线。
+## 🌟 项目亮点 (Core Features)
 
-## 运行方法
-1. 安装依赖：`pip install -r requirements.txt`
-2. 运行对比：`python run.py`
-3. 动态可视化：`server.py`
+本项目并非简单的路径寻找，而是深度集成了公共管理中的多个关键变量：
+* **数字鸿沟 (Digital Divide)**：设定了 80% 的智能终端普及率，量化分析技术弱势群体在危机中的幸存率。
+* **信息延迟 (Information Delay)**：模拟科层制决策中的响应时滞（$T_{delay} = 5$），测试系统启动前后的伤亡曲线波动。
+* **空间压力与拥堵 (Congestion & Capacity)**：引入网格容量限制（`max_capacity = 6`），模拟真实撤离中的物理挤压与二次灾害。
+* **复杂环境 (Complex Topology)**：随机生成的工厂迷宫（障碍率 15%），挑战算法在非凸空间（U型陷阱）中的表现。
+
+## 🛠 技术架构
+
+* **核心框架**：`Mesa 2.x` (Agent-Based Modeling Library)
+* **路径算法**：基于广度优先搜索 (**BFS**) 的动态最优路径规划。
+* **可复现性**：通过锁定随机种子（**Seed 30**），确保地形生成与行为轨迹的 100% 可复现性。*“Seed 30: Dedicated to the greatest shooter in NBA history.”*
+* **可视化**：使用 `Matplotlib` 进行宏观趋势分析，`Mesa ModularServer` 实现交互式 2D 动态沙盘。
+
+## 📊 实验结论
+
+### 1. 效能对比
+数智化干预（Smart Mode）能将伤亡人数从传统模式下的 50% 降低至 2.5% 左右。AI 算法通过全局视野成功化解了传统模式下的“局部最优解”陷阱（即盲目冲向最近出口导致的死胡同困境）。
+
+### 2. 快即是慢 (Faster-is-Slower) 悖论
+实验发现，当拥堵阈值设定过低（如 `max_capacity < 3`）时，绝对的算法理性会导致人群过度集中在最优路径上，反而引发比盲目逃生更严重的踩踏伤亡。这证明了**技术应用必须配合基础设施韧性**。
+
+## 🚀 快速开始
+
+### 环境配置
+本项目需使用 Mesa 2.x 版本以支持经典可视化组件：
+```bash
+conda activate abm_project
+pip install "mesa<3.0" matplotlib
+```
+
+### 运行方式
+* **获取数据对比图**：`python run.py`
+* **启动交互式沙盘**：`python server.py` (访问 `http://127.0.0.1:8521`)
+
+## 📝 公共政策反思 (Academic Reflection)
+该模型揭示了技术在提升应急治理效率的同时，可能带来的“算法极化”风险。在未来的智慧工厂建设中，不仅需要升级“数字大脑”，更应关注非标准用工群体的安全保障，消除危机中的信息孤岛。
