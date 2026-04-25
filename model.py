@@ -82,9 +82,18 @@ class WorkerAgent(mesa.Agent):
         if not exits: return
         closest_exit = min(exits, key=lambda e: abs(e.pos[0]-self.pos[0]) + abs(e.pos[1]-self.pos[1]))
         possible_steps = self.model.grid.get_neighborhood(self.pos, moore=False, include_center=False)
-        best_step = min(possible_steps, key=lambda p: abs(closest_exit.pos[0]-p[0]) + abs(closest_exit.pos[1]-p[1]))
         
-        self.check_congestion_and_move(best_step) # 替换原来的 move_agent
+        # 【修改点】：过滤掉有墙壁的格子
+        valid_steps = []
+        for p in possible_steps:
+            contents = self.model.grid.get_cell_list_contents([p])
+            if not any(isinstance(a, ObstacleAgent) for a in contents):
+                valid_steps.append(p)
+                
+        if not valid_steps: return # 如果被墙完全卡死，原地等待
+        
+        best_step = min(valid_steps, key=lambda p: abs(closest_exit.pos[0]-p[0]) + abs(closest_exit.pos[1]-p[1]))
+        self.check_congestion_and_move(best_step)
 
     def move_smart(self):
         path = self.bfs_path()
@@ -92,7 +101,6 @@ class WorkerAgent(mesa.Agent):
             self.check_congestion_and_move(path[1]) # 替换原来的 move_agent
 
     def bfs_path(self):
-        # 这里的寻路逻辑不变，保持之前的 BFS 代码即可
         queue = deque([[self.pos]])
         visited = set([self.pos])
         while queue:
@@ -104,8 +112,8 @@ class WorkerAgent(mesa.Agent):
                 nx, ny = x + dx, y + dy
                 if not self.model.grid.out_of_bounds((nx, ny)) and (nx, ny) not in visited:
                     contents = self.model.grid.get_cell_list_contents([(nx, ny)])
-                    # AI 不仅要避开毒气，还可以预判极度拥挤的格子（可选）
-                    if not any(isinstance(a, GasAgent) for a in contents):
+                    # 【修改点】：AI 不仅要避开毒气，还要避开墙壁
+                    if not any(isinstance(a, (GasAgent, ObstacleAgent)) for a in contents):
                         visited.add((nx, ny))
                         queue.append(path + [(nx, ny)])
         return None
