@@ -60,8 +60,8 @@ server = mesa.visualization.ModularServer(
         "width": 20,
         "height": 20,
         "num_workers": 40,
-        "mode": "smart",  # 录完这个记得改回 "traditional" 再录一个对比
-        "seed": 30        # 锁定库里号码，确保地形和刚才的折线图完全一致！
+        "mode": "smart",  # 可切换trational
+        "seed": 30        
     }
 )
 
