@@ -1,60 +1,70 @@
-from mesa.visualization import CanvasGrid
-from mesa.visualization import ModularServer
+import mesa
 from model import FactoryModel, WorkerAgent, GasAgent, ExitAgent, ObstacleAgent
 
-# 1. 定义智能体的视觉呈现（长相、颜色、图层）   
 def agent_portrayal(agent):
+    """定义不同 Agent 在网页上的长相"""
     if agent is None:
         return
 
-    portrayal = {"Filled": "true", "Layer": 0}
+    portrayal = {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Layer": 0}
 
-    if isinstance(agent, WorkerAgent):
-        portrayal["Shape"] = "circle"
-        portrayal["r"] = 0.6
-        # 如果死亡变成灰色，安全撤离会消失，正常跑动是蓝色
-        if agent.is_dead:
-            portrayal["Color"] = "grey"
-            portrayal["Layer"] = 1 # 尸体图层垫底
-        else:
-            portrayal["Color"] = "blue"
-            portrayal["Layer"] = 2 # 活人图层在最上面
+    # 1. 障碍物/墙壁：黑色方块
+    if isinstance(agent, ObstacleAgent):
+        portrayal["Color"] = "black"
+        portrayal["Layer"] = 1
 
-    elif isinstance(agent, GasAgent):
-        portrayal["Shape"] = "rect"
-        portrayal["w"] = 1
-        portrayal["h"] = 1
-        portrayal["Color"] = "red"
-        portrayal["Layer"] = 1 # 毒气覆盖在底层
-
+    # 2. 安全出口：绿色方块
     elif isinstance(agent, ExitAgent):
-        portrayal["Shape"] = "rect"
-        portrayal["w"] = 1
-        portrayal["h"] = 1
         portrayal["Color"] = "green"
-        portrayal["Layer"] = 0 # 绿色安全出口
-    
-    elif isinstance(agent, ObstacleAgent):
-        portrayal["Shape"] = "rect"
-        portrayal["w"] = 1
-        portrayal["h"] = 1
-        portrayal["Color"] = "black"  # 用黑色方块代表墙壁或机器
-        portrayal["Layer"] = 0
+        portrayal["Layer"] = 1
+
+    # 3. 毒气：红色方块（半透明，Layer设高一点遮住地表）
+    elif isinstance(agent, GasAgent):
+        portrayal["Color"] = "#ff0000aa" # 半透明红
+        portrayal["Layer"] = 3
+
+    # 4. 工人：蓝色圆点
+    elif isinstance(agent, WorkerAgent):
+        portrayal["Shape"] = "circle"
+        portrayal["r"] = 0.8
+        portrayal["Filled"] = "true"
+        portrayal["Layer"] = 2
+        portrayal["Color"] = "blue"
+        # 如果工人死了，变灰色；安全了，变黄色（或消失）
+        if agent.is_dead:
+            portrayal["Color"] = "gray"
+        elif agent.is_safe:
+            portrayal["Color"] = "yellow"
 
     return portrayal
 
-# 2. 创建一个 20x20 的网格画布，网页上显示尺寸为 500x500 像素
-grid = CanvasGrid(agent_portrayal, 20, 20, 500, 500)
+# ==========================================
+# 定义画布：20x20 网格，网页显示尺寸 500x500 像素
+# ==========================================
+canvas_element = mesa.visualization.CanvasGrid(agent_portrayal, 20, 20, 500, 500)
 
-# 3. 建立服务器并加载模型
-# 注意：这里我们先默认演示 "smart"（数智化动态规划）模式
-server = ModularServer(
+# (可选) 增加一个实时折线图，直接在网页侧边看数据
+chart_element = mesa.visualization.ChartModule([
+    {"Label": "Dead (Poisoned)", "Color": "Red"},
+    {"Label": "Safe (Evacuated)", "Color": "Green"}
+])
+
+# ==========================================
+# 配置服务器：绑定模型、可视化元素和初始参数
+# ==========================================
+server = mesa.visualization.ModularServer(
     FactoryModel,
-    [grid],
-    "Factory Evacuation Simulation",
-    {"width": 20, "height": 20, "num_workers": 40, "mode": "smart"} 
+    [canvas_element, chart_element], # 包含画布和图表
+    "Factory Crisis ABM Simulation",
+    {
+        "width": 20,
+        "height": 20,
+        "num_workers": 40,
+        "mode": "smart",  # 录完这个记得改回 "traditional" 再录一个对比
+        "seed": 30        # 锁定库里号码，确保地形和刚才的折线图完全一致！
+    }
 )
 
-# 设定服务器端口并启动
-server.port = 8521 
-server.launch()
+server.port = 8521 # 设置端口
+if __name__ == "__main__":
+    server.launch()
