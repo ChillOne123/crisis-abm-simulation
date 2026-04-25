@@ -35,73 +35,72 @@ class ExitAgent(mesa.Agent):
 class WorkerAgent(mesa.Agent):
     def __init__(self, unique_id, model, mode="traditional"):
         super().__init__(unique_id, model)
-        self.mode = mode       # "traditional" 或 "smart"
-        self.is_safe = False   # 是否已撤离
-        self.is_dead = False   # 是否中毒
+        self.mode = mode
+        self.is_safe = False
+        self.is_dead = False
+        
+        # 【新增1：数字鸿沟】70%的工人配备了智能安全帽，30%没有
+        self.has_smart_device = random.random() < 0.7 
 
     def step(self):
         if self.is_safe or self.is_dead:
             return
 
-        # 状态判定 1：是否中毒（与毒气在同一格）
         cellmates = self.model.grid.get_cell_list_contents([self.pos])
         if any(isinstance(agent, GasAgent) for agent in cellmates):
             self.is_dead = True
             return
-
-        # 状态判定 2：是否到达出口
         if any(isinstance(agent, ExitAgent) for agent in cellmates):
             self.is_safe = True
             return
 
-        # 根据不同模式执行不同的寻路逻辑
-        if self.mode == "traditional":
-            self.move_traditional()
-        else:
+        # 【新增2：信息延迟】如果系统还没启动，或者工人没有智能设备，只能传统逃生
+        if self.mode == "smart" and self.has_smart_device and self.model.current_step >= self.model.activation_delay:
             self.move_smart()
+        else:
+            self.move_traditional()
+
+    def check_congestion_and_move(self, target_pos):
+        """【新增3：物理拥挤】如果目标格子人数超过容量，则被堵住无法移动"""
+        contents = self.model.grid.get_cell_list_contents([target_pos])
+        workers_in_cell = sum(1 for a in contents if isinstance(a, WorkerAgent))
+        if workers_in_cell < self.model.max_capacity:
+            self.model.grid.move_agent(self, target_pos)
+        # 如果超出容量，这回合就停留在原地（模拟拥堵）
 
     def move_traditional(self):
-        """传统模式痛点：信息盲区，无视毒气直接奔向直线距离最近的出口"""
         exits = [a for a in self.model.schedule.agents if isinstance(a, ExitAgent)]
         if not exits: return
-        
-        # 找到绝对距离最近的出口
         closest_exit = min(exits, key=lambda e: abs(e.pos[0]-self.pos[0]) + abs(e.pos[1]-self.pos[1]))
         possible_steps = self.model.grid.get_neighborhood(self.pos, moore=False, include_center=False)
-        
-        # 向着目标移动一步（可能直接走进毒气里）
         best_step = min(possible_steps, key=lambda p: abs(closest_exit.pos[0]-p[0]) + abs(closest_exit.pos[1]-p[1]))
-        self.model.grid.move_agent(self, best_step)
+        
+        self.check_congestion_and_move(best_step) # 替换原来的 move_agent
 
     def move_smart(self):
-        """数智化模式应用：IoT获取毒气坐标，AI下发 BFS 全局避障路径"""
         path = self.bfs_path()
         if path and len(path) > 1:
-            self.model.grid.move_agent(self, path[1]) # 沿着安全路径走下一步
+            self.check_congestion_and_move(path[1]) # 替换原来的 move_agent
 
     def bfs_path(self):
-        # 基于广度优先搜索(BFS)寻找避开毒气的最短出口路径
+        # 这里的寻路逻辑不变，保持之前的 BFS 代码即可
         queue = deque([[self.pos]])
         visited = set([self.pos])
         while queue:
             path = queue.popleft()
             x, y = path[-1]
-
-            # 如果当前节点是出口，返回整条路径
             if any(isinstance(a, ExitAgent) for a in self.model.grid.get_cell_list_contents([(x,y)])):
                 return path
-
-            # 遍历四个方向
             for dx, dy in [(0,1), (1,0), (0,-1), (-1,0)]:
                 nx, ny = x + dx, y + dy
                 if not self.model.grid.out_of_bounds((nx, ny)) and (nx, ny) not in visited:
-                    # 关键逻辑：AI算法识别并避开毒气格子
                     contents = self.model.grid.get_cell_list_contents([(nx, ny)])
+                    # AI 不仅要避开毒气，还可以预判极度拥挤的格子（可选）
                     if not any(isinstance(a, GasAgent) for a in contents):
                         visited.add((nx, ny))
                         queue.append(path + [(nx, ny)])
-        return None # 如果被毒气完全包围则无路可走
-
+        return None
+    
 # ==========================================
 # 4. 定义全局工厂模型
 # ==========================================
