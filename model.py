@@ -126,22 +126,39 @@ class FactoryModel(mesa.Model):
         self.activation_delay = 5 # 系统启动延迟：前5个回合盲目逃生
         self.max_capacity = 3     # 通道拥挤度：一个格子最多
 
-        # 设置两个安全出口（左上角和右下角）
+        # 1. 设置两个安全出口
         exits = [(0, 0), (width-1, height-1)]
         for pos in exits:
             exit_agent = ExitAgent(self.next_id(), self)
             self.grid.place_agent(exit_agent, pos)
             self.schedule.add(exit_agent)
 
-        # 随机放置工人
+        # 2. 【新增】随机生成工厂复杂地形（25%的障碍物密度）
+        obstacle_density = 0.25
+        for x in range(width):
+            for y in range(height):
+                # 避开出口和毒气中心点，防止一开始就把路堵死
+                if (x, y) in exits or (x == width//2 and y == height//2):
+                    continue
+                if self.random.random() < obstacle_density:
+                    obs = ObstacleAgent(self.next_id(), self)
+                    self.grid.place_agent(obs, (x, y))
+                    self.schedule.add(obs)
+
+        # 3. 随机放置工人（必须降生在空地上）
         for _ in range(self.num_workers):
             worker = WorkerAgent(self.next_id(), self, mode=self.mode)
-            x = self.random.randrange(width)
-            y = self.random.randrange(height)
+            while True:
+                x = self.random.randrange(width)
+                y = self.random.randrange(height)
+                # 检查该格子是否没有障碍物
+                contents = self.grid.get_cell_list_contents([(x, y)])
+                if not any(isinstance(a, ObstacleAgent) for a in contents):
+                    break
             self.grid.place_agent(worker, (x, y))
             self.schedule.add(worker)
 
-        # 设定毒气泄漏源（网格正中央附近）
+        # 4. 设定毒气泄漏源（网格正中央）
         gas = GasAgent(self.next_id(), self)
         self.grid.place_agent(gas, (width//2, height//2))
         self.schedule.add(gas)
