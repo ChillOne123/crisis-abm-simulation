@@ -16,7 +16,7 @@ class GasAgent(mesa.Agent):
         for neighbor in neighbors:
             # 如果该格子没有毒气，且满足扩散概率
             contents = self.model.grid.get_cell_list_contents([neighbor])
-            if not any(isinstance(a, GasAgent) for a in contents) and random.random() < 0.15:
+            if not any(isinstance(a, GasAgent) for a in contents) and self.mode.random.random() < 0.15:
                 new_gas = GasAgent(self.model.next_id(), self.model)
                 self.model.grid.place_agent(new_gas, neighbor)
                 self.model.schedule.add(new_gas)
@@ -185,5 +185,6 @@ class FactoryModel(mesa.Model):
         )
 
     def step(self):
+        self.current_step += 1
         self.datacollector.collect(self)
         self.schedule.step()
