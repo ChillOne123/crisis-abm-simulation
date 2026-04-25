@@ -30,6 +30,15 @@ class ExitAgent(mesa.Agent):
         pass # 出口本身不需要动作
 
 # ==========================================
+# 定义物理阻挡：墙壁/机床 Agent
+# ==========================================
+class ObstacleAgent(mesa.Agent):
+    def __init__(self, unique_id, model):
+        super().__init__(unique_id, model)
+    def step(self):
+        pass # 障碍物不动
+
+# ==========================================
 # 3. 定义行为主体：工人 Agent
 # ==========================================
 class WorkerAgent(mesa.Agent):
@@ -106,6 +115,7 @@ class WorkerAgent(mesa.Agent):
 # ==========================================
 class FactoryModel(mesa.Model):
     def __init__(self, width=20, height=20, num_workers=40, mode="traditional"):
+        super().__init__()
         self.num_workers = num_workers
         self.grid = mesa.space.MultiGrid(width, height, True)
         self.schedule = mesa.time.RandomActivation(self)
