@@ -1,8 +1,8 @@
-from mesa.visualization.modules import CanvasGrid
-from mesa.visualization.ModularVisualization import ModularServer
-from model import FactoryModel, WorkerAgent, GasAgent, ExitAgent
+from mesa.visualization import CanvasGrid
+from mesa.visualization import ModularServer
+from model import FactoryModel, WorkerAgent, GasAgent, ExitAgent, ObstacleAgent
 
-# 1. 定义智能体的视觉呈现（长相、颜色、图层）
+# 1. 定义智能体的视觉呈现（长相、颜色、图层）   
 def agent_portrayal(agent):
     if agent is None:
         return
@@ -33,6 +33,13 @@ def agent_portrayal(agent):
         portrayal["h"] = 1
         portrayal["Color"] = "green"
         portrayal["Layer"] = 0 # 绿色安全出口
+    
+    elif isinstance(agent, ObstacleAgent):
+        portrayal["Shape"] = "rect"
+        portrayal["w"] = 1
+        portrayal["h"] = 1
+        portrayal["Color"] = "black"  # 用黑色方块代表墙壁或机器
+        portrayal["Layer"] = 0
 
     return portrayal
 
