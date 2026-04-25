@@ -1,6 +1,7 @@
 import mesa
 import random
 from collections import deque
+import random
 
 # ==========================================
 # 1. 定义环境冲击：毒气 Agent
@@ -48,8 +49,8 @@ class WorkerAgent(mesa.Agent):
         self.is_safe = False
         self.is_dead = False
         
-        # 【新增1：数字鸿沟】70%的工人配备了智能安全帽，30%没有
-        self.has_smart_device = random.random() < 0.7 
+        # 【新增1：数字鸿沟】90%的工人配备了智能安全帽，10%没有
+        self.has_smart_device = random.random() < 0.9 
 
     def step(self):
         if self.is_safe or self.is_dead:
@@ -122,8 +123,12 @@ class WorkerAgent(mesa.Agent):
 # 4. 定义全局工厂模型
 # ==========================================
 class FactoryModel(mesa.Model):
-    def __init__(self, width=20, height=20, num_workers=40, mode="traditional"):
-        super().__init__()
+    def __init__(self, width=20, height=20, num_workers=40, mode="traditional", seed = None):
+        super().__init__(seed=seed)
+
+        if seed is not None:
+            random.seed(seed)
+
         self.num_workers = num_workers
         self.grid = mesa.space.MultiGrid(width, height, True)
         self.schedule = mesa.time.RandomActivation(self)
@@ -132,7 +137,7 @@ class FactoryModel(mesa.Model):
         # 延迟启动与拥挤程度控制变量
         self.current_step = 0
         self.activation_delay = 5 # 系统启动延迟：前5个回合盲目逃生
-        self.max_capacity = 3     # 通道拥挤度：一个格子最多
+        self.max_capacity = 6     # 通道拥挤度：一个格子最多
 
         # 1. 设置两个安全出口
         exits = [(0, 0), (width-1, height-1)]
@@ -141,8 +146,8 @@ class FactoryModel(mesa.Model):
             self.grid.place_agent(exit_agent, pos)
             self.schedule.add(exit_agent)
 
-        # 2. 【新增】随机生成工厂复杂地形（25%的障碍物密度）
-        obstacle_density = 0.25
+        # 2. 【新增】随机生成工厂复杂地形（10%的障碍物密度）
+        obstacle_density = 0.1
         for x in range(width):
             for y in range(height):
                 # 避开出口和毒气中心点，防止一开始就把路堵死
