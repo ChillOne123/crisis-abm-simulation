@@ -1,14 +1,16 @@
 from model import FactoryModel
 import matplotlib.pyplot as plt
 
+MAGIC_SEED = 30
+
 # 运行传统模式（信息盲区）
-model_traditional = FactoryModel(mode="traditional")
+model_traditional = FactoryModel(mode="traditional", seed=MAGIC_SEED)
 for _ in range(40):
     model_traditional.step()
 data_trad = model_traditional.datacollector.get_model_vars_dataframe()
 
 # 运行数智化模式（动态规划）
-model_smart = FactoryModel(mode="smart")
+model_smart = FactoryModel(mode="smart", seed=MAGIC_SEED)
 for _ in range(40):
     model_smart.step()
 data_smart = model_smart.datacollector.get_model_vars_dataframe()
